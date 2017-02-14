@@ -1,0 +1,65 @@
+#!/usr/bin/env node
+/**
+* 入口文件:view中的html文件,以及被html文件引用的js、css文件
+ * -a  重新分析文件关系,全量构建
+ * -m  分析文件关系,生成新的映射文件
+ * -c commit-hash    commit  先判断是否存在map文件,存在则不全量分析。否则全量分析。 根据提交构建
+ * -f filePath  自定义提交
+* */
+var fs = require('fs');
+var clh = require('./increment/change-list-handle');
+var gmr = require('./increment/get-reference-relation');
+var gulpRun = require('./increment/gup-run');
+var smr = require('./increment/analyze-reference-relation');
+var proSrcRootPath = require('./doumi_config').proSrcRootPath;
+var chalk = require('chalk');
+
+
+exec();
+function exec() {
+
+    var arguments = process.argv.splice(2);
+    var p0 = arguments[0];
+    var bizCommitHash = arguments[1];
+   switch (p0) {
+       case '-a' : //全量构建、不涉及映射关系
+           console.log(chalk.blue('开始全量构建...'));
+            gulpRun.run(null);
+            break;
+       case '-c' : //根据提交的changelist构建,先判断是否有映射文件,如果没有则先分析映射关系
+           if (!bizCommitHash) {
+               console.log(chalk.red('请提供commit-hash!'));
+               return;
+           }
+           clh.run(bizCommitHash).then(function(targetCommitFile) {
+               console.log(chalk.blue('  过滤后的changelist为:'));
+               console.log(targetCommitFile);
+               var targetBuildFile = gmr.run(targetCommitFile);
+               console.log(chalk.blue('最终需要构建的文件列表为:'))
+               console.log(targetBuildFile);
+               console.log(chalk.blue('开始build...'));
+               gulpRun.run(targetBuildFile);
+           });
+           break;
+       case '-f' :
+           if (!bizCommitHash) {
+               console.log(chalk.red('请指定文件路径'));
+               return;
+           }
+           var targetFileString = fs.readFileSync(bizCommitHash, {encoding : 'utf8'});
+           var targetFileArr = clh.filter(targetFileString)
+           console.log(chalk.blue('  过滤后的changelist为:'));
+           console.log(targetFileArr);
+           var targetBuildFile = gmr.run(targetFileArr);
+           console.log(chalk.blue('最终需要构建的文件列表为:'))
+           console.log(targetBuildFile);
+           console.log(chalk.blue('开始build...'));
+           gulpRun.run(targetBuildFile);
+           break;
+       case '-m' : //全量生成映射关系文件,如果文件之前存在则先删除
+           smr.analyzeAll();
+           break;
+    }
+}
+
+//日后可增加发送邮件周知。文件内容为change的文件列表以及有影响的文件。
