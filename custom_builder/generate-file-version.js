@@ -6,7 +6,7 @@ var fs = require('fs');
 
 var db = global.nedbObj;
 // 插件入口函数
-versionMng = function(options){
+var generateFileVersion = function(options){
     return through(function( file, enc, callback ){
         var rootPath = '';
         if (options && options.rootPath) {
@@ -29,4 +29,4 @@ versionMng = function(options){
     });
 };
 
-module.exports = versionMng;
+module.exports = generateFileVersion;

@@ -8,15 +8,16 @@ var htmlmin = require('gulp-htmlmin');
 var gulpSequence = require('gulp-sequence');
 var ejsVar = require("./ejs_var.js");
 var webpack = require('gulp-webpack');
-var changePath = require('./change_path');
+
 var dataStore = require('nedb');
 var dbName = './file_version.db';
 global.nedbObj = new dataStore({ filename: dbName, autoload: true });
 global.nedbObj.ensureIndex({ fieldName: 'fileName', unique: true }, function (err) {
 
 })
-var versionMng = require('./file_version');
-var htmlVersionHandle = require('./html_version_handle');
+var changePath = require('./custom_builder/change-path');
+var genVersion = require('./custom_builder/generate-file-version');
+var htmlInnerResVersionHandle = require('./custom_builder/add-file-version');
 
 var buildData = null;
 
@@ -39,7 +40,7 @@ gulp.task("css", function () {
         }))
         .pipe(changePath({imgRootPath : rPath.img}, bPath.imgSrcRootPath))
         .pipe(cssMinify())
-        .pipe(versionMng({rootPath : bPath.cssSrcRootPath}))
+        .pipe(genVersion({rootPath : bPath.cssSrcRootPath}))
         .pipe(gulp.dest(bPath.cssDistRootPath));
 });
 
@@ -53,7 +54,7 @@ gulp.task('lib-js', function() {
         });
     }
     return gulp.src(glob, {base : bPath.jsSrcRootPath})
-        .pipe(versionMng({rootPath : bPath.jsSrcRootPath}))
+        .pipe(genVersion({rootPath : bPath.jsSrcRootPath}))
         .pipe(uglify())
         .pipe(gulp.dest(bPath.jsDistRootPath));
 })
@@ -74,11 +75,11 @@ gulp.task("js", function () {
             resolve : {
                 root : bPath.jsSrcRootPath
             },
-            resolveLoader: { root: [path.join(__dirname, "node_modules"), __dirname] }, //指定loader路径
+            resolveLoader: { root: [path.join(__dirname, "node_modules"), path.join(__dirname, "custom_loader")] }, //指定loader路径
             module: {
                 loaders: [
                     {test: /\.html$/, loader: 'raw-loader!html-minify'},
-                    { test: /\.js$/, loader: 'module-path!babel?presets[]=es2015'}
+                    { test: /\.js$/, loader: 'path-handle!babel?presets[]=es2015'}
                 ]
             },
             //keep comments for avalon ms-for
@@ -86,7 +87,7 @@ gulp.task("js", function () {
                 comments: true
             }
         }))
-        .pipe(versionMng({rootPath : bPath.jsSrcRootPath}))
+        .pipe(genVersion({rootPath : bPath.jsSrcRootPath}))
         .pipe(uglify())
         .pipe(gulp.dest(bPath.jsDistRootPath));
 });
@@ -113,7 +114,7 @@ gulp.task("htmlVersion", function() {
     }
     return gulp.src(glob, {base : bPath.htmlDistRootPath})
         .pipe(changePath({jsRootPath : rPath.js, cssRootPath : rPath.css, imgRootPath : rPath.img}, bPath.imgSrcRootPath))
-        .pipe(htmlVersionHandle({jsRootPath : rPath.js, cssRootPath : rPath.css}))
+        .pipe(htmlInnerResVersionHandle({jsRootPath : rPath.js, cssRootPath : rPath.css}))
         .pipe(htmlmin({collapseWhitespace: true}))
         .pipe(gulp.dest(bPath.htmlDistRootPath));
 });
