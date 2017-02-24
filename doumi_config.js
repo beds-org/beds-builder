@@ -1,10 +1,10 @@
 /**
  * 构建路径配置
  */
-var proSrcRootPath = '/Users/gy/WebstormProjects/c_m_doumi/';
-var proDistRootPath = '/Users/gy/WebstormProjects/c_m_doumi/dist/';
-var remoteStaticResDomain = 'http://192.168.45.182'; //如果是测试发布,不要用localhost。phantom不支持
-var remoteApiDomain = '/virtual-api';
+var proSrcRootPath = '/Users/gy/WebstormProjects/doumi_b_im';
+var proDistRootPath = '/Users/gy/WebstormProjects/doumi_b_im/dist/';
+var remoteStaticResDomain = '//sta.doumi.com/src/b_im'; //如果是测试发布,不要用localhost。phantom不支持
+var remoteApiDomain = '//vip.doumi.com';
 exports.buildRootPathConfig = {
     //资源根目录
     jsSrcRootPath : proSrcRootPath,
@@ -14,7 +14,7 @@ exports.buildRootPathConfig = {
     //glob目录
     jsGlobPath : [proSrcRootPath + '/static/js/**/*.js', '!' + proSrcRootPath + '/static/js/**/widget/**/*.js'],
     jsLibGlobPath : proSrcRootPath + '/common/js_lib/**/*.js',
-    cssGlobPath : [proSrcRootPath + '/static/css/**/*.css', proSrcRootPath + '/static/less/**/*.less', proSrcRootPath + '/common/css_lib/**/*.css'],
+    cssGlobPath : [proSrcRootPath + '/static/css/**/*.css', proSrcRootPath + '/static/css/**/*.less', proSrcRootPath + '/static/less/**/*.less', proSrcRootPath + '/common/css_lib/**/*.css',proSrcRootPath + '/common/js_lib/**/*.css'],
     imgGlobPath : proSrcRootPath + '/static/img/**/*.*',
     htmlGlobPath : proSrcRootPath + '/view/**/*.html',
     //发布目录
