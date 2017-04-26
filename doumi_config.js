@@ -1,11 +1,12 @@
 /**
  * 构建路径配置
  */
-var proSrcRootPath = '/Users/gy/WebstormProjects/doumi_b_im';
-var proDistRootPath = '/Users/gy/WebstormProjects/doumi_b_im/dist/';
+var proSrcRootPath = '/Users/gy/WebstormProjects/doumi_b_web/';
+var proDistRootPath = '/Users/gy/WebstormProjects/doumi_b_web/dist/';
 var remoteStaticResDomain = '//sta.doumi.com/src/b_im'; //如果是测试发布,不要用localhost。phantom不支持
 var remoteApiDomain = '//vip.doumi.com';
 exports.buildRootPathConfig = {
+    projectSrcRootPath: proSrcRootPath,
     //资源根目录
     jsSrcRootPath : proSrcRootPath,
     cssSrcRootPath : proSrcRootPath,
@@ -33,3 +34,4 @@ exports.remoteRootPathConfig = {
 }
 
 exports.proSrcRootPath = proSrcRootPath;
+exports.proDistRootDir = proDistRootPath;
