@@ -132,7 +132,7 @@ gulp.task("jsRootModule", function () {
  */
 gulp.task("css", function () {
     return gulp.src(cssSrcFilePathGlob, {base : cssSrcFileRootDir})
-        .pipe(changePath({imgRootPath : imgRequestBasePath}, imgSrcFileRootDir))
+        .pipe(changePath({projectRootPath: projectSrcRootDir, pathType: 'relative', accessRootPath: ''}))
         .pipe(cssMinify())
         .pipe(genVersion({rootPath : lessRootModuleSrcFileRootDir}))
         .pipe(gulp.dest(distRootDir));
@@ -150,7 +150,7 @@ gulp.task("lessRootModule", function () {
             //modifyVars : {'@pic_path' : '"'+ rPath.css +'"'},
             paths : ['./', lessRootModuleSrcFileRootDir]
         }))
-        .pipe(changePath({imgRootPath : imgRequestBasePath}, imgSrcFileRootDir))
+        .pipe(changePath({projectRootPath: projectSrcRootDir, pathType: 'relative'}))
         .pipe(cssMinify())
         .pipe(genVersion({rootPath : lessRootModuleSrcFileRootDir}))
         .pipe(gulp.dest(distRootDir));
@@ -177,6 +177,8 @@ gulp.task("html", function () {
     return gulp.src(htmlSrcFilePathGlob, {base : htmlSrcFileRootDir})
         .pipe(ejsPatch(ejsPathConfig))
         .pipe(ejs(ejsVar.getEjsVar(rpath), ejsPathConfig))
+        .pipe(changePath({projectRootPath: projectSrcRootDir, pathType: 'relative'}))
+        .pipe(htmlmin({collapseWhitespace: true}))
         .pipe(gulp.dest(distRootDir));
 });
 

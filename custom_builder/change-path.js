@@ -2,54 +2,77 @@ var through = require('through-gulp');
 var gulp = require('gulp');
 var md5 = require('md5');
 var fs = require('fs');
+var path = require('path');
 
 var jsRe = /<script.*?src=["'](.*?)[\?"']/;
 var cssRe = /<link.*?rel=["']stylesheet["'].*?href=['"](.*?)[\?'"]/;
 var imgRe = /<img.*?src=['"](.*?)['"]/;
 var bgcRe = /background\s*:\s*url\(['"]?(.*?)['"]?\)/;
 //targetReg == jsRe + cssRe + imgRe + bgcRe
+
 //html标签属性值必须加引号
 var targetReg = /<script.*?src=["'](.*?)[\?"']|<link.*?rel=["']stylesheet["'].*?href=['"](.*?)[\?'"]|<img.*?src=['"](.*?)['"]|background\s*:\s*url\(['"]?(.*?)['"]?\)/g;
- changePath = function(options, proRootPath){
-    return through(function( file, enc, callback ){
-        var jsRootPath = options.jsRootPath;
-        var cssRootPath = options.cssRootPath;
-        var imgRootPath = options.imgRootPath;
-        if (/^\/\//.test(jsRootPath)) {
-            jsRootPath = 'hdynamic:' + jsRootPath; //双斜杠开头的根路径加上一个临时的schema
-        }
-        if (/^\/\//.test(cssRootPath)) {
-            cssRootPath = 'hdynamic:' + cssRootPath;
-        }
-        if (/^\/\//.test(imgRootPath)) {
-            imgRootPath = 'hdynamic:' + imgRootPath;
-        }
-        var content = file.contents.toString();
-        function delRepeatSprit(str) {
-            var t= str.replace(/[\/\\]+/g, '/').replace('http:/', 'http://').replace('hdynamic:/', '//');
-            return t;
-        }
-        content = content.replace(targetReg, function(p1, jsPath, cssPath, imgPath, bgcPath) {
-            if (/data:image|['"](\/\/|http:\/\/)/.test(p1)) { //绝对路径,即路径中以//、http://开头的路径为外站路径以及base64图片,不予处理
-                return p1;
+var ignoreReg = /^data:image|^\/\/|^[a-zA-Z]:\/\//; //data uri、schema以及 双斜杠开头的路径不处理
+
+var opts = null;
+var parasitiferPath = null;
+function changePath(filePath) {
+    switch(opts.pathType) {
+        case 'absolute':
+            if (!path.isAbsolute(filePath)) { //说明路径本身是相对路径，需要将其处理成绝对路径
+                filePath = path.resolve(parasitiferPath, filePath);
+                filePath = filePath.replace(opts.projectRootPath, '');
             }
+            return path.normalize(path.join(opts.accessRootPath, filePath));
+            break;
+        case 'relative':
+            if (path.isAbsolute(filePath)) {
+                filePath = path.relative(parasitiferPath, path.join(opts.projectRootPath, filePath))
+            }
+            return filePath
+            break;
+    }
+}
+
+
+var change = function(options){
+
+    return through(function( file, enc, callback ){
+        opts = options;
+        parasitiferPath = path.dirname(file.history[0]);
+        var content = file.contents.toString();
+        content = content.replace(targetReg, function(p1, jsPath, cssPath, imgPath, bgcPath) {
             if (jsPath) {
-                var newPath = jsPath.replace(/\.+\//g, '/');
-                return delRepeatSprit(p1.replace(jsPath, jsRootPath + newPath));
+                if (ignoreReg.test(jsPath)) {
+                    return p1;
+                } else {
+                    return p1.replace(jsPath, changePath(jsPath));
+                }
             }
             if (cssPath) {
-                var newPath = cssPath.replace(/\.+\//g, '/');
-                return delRepeatSprit(p1.replace(cssPath, cssRootPath + newPath).replace('.less', '.css'));
+                if (ignoreReg.test(cssPath)) {
+                    return p1;
+                } else {
+                    return p1.replace(cssPath, changePath(cssPath).replace('.less', '.css'));
+                }
             }
             if (imgPath) {
-                var newPath = imgPath.replace(/\.+\//g, '/');
-                newPath = setImgVersion(proRootPath, newPath);
-                return delRepeatSprit(p1.replace(imgPath, imgRootPath + newPath));
+               // var newPath = imgPath.replace(/\.+\//g, '/');
+               // newPath = setImgVersion(proRootPath, newPath);
+                if (ignoreReg.test(imgPath)) {
+                    return p1;
+                } else {
+                    return p1.replace(imgPath, changePath(imgPath));
+                }
             }
             if (bgcPath) {
-                var newPath = bgcPath.replace(/\.+\//g, '/');
-                newPath = setImgVersion(proRootPath, newPath);
-                return delRepeatSprit(p1.replace(bgcPath, imgRootPath + newPath));
+               // var newPath = bgcPath.replace(/\.+\//g, '/');
+                //newPath = setImgVersion(proRootPath, newPath);
+                if (ignoreReg.test(bgcPath)) {
+                    return p1;
+                } else {
+                    return p1.replace(bgcPath, changePath(bgcPath));
+                }
             }
             return p1;
         });
@@ -66,4 +89,4 @@ function setImgVersion(proRootPath, newPath) {
         console.log('图片' + newPath + '未能设置版本号');
     }
 }
-module.exports = changePath;
+module.exports = change;
