@@ -7,6 +7,7 @@
  * -f filePath  自定义提交
 * */
 var fs = require('fs');
+var path = require('path');
 var clh = require('./increment/change-list-handle');
 var gmr = require('./increment/get-reference-relation');
 var gulpRun = require('./increment/gup-run');
@@ -21,10 +22,14 @@ function exec() {
     var arguments = process.argv.splice(2);
     var p0 = arguments[0];
     var bizCommitHash = arguments[1];
+    if (arguments.length == 0) {
+        p0 = '-a';
+    }
    switch (p0) {
        case '-a' : //全量构建、不涉及映射关系
+           let pathConfig = checkOrCreateConfigFile();
            console.log(chalk.blue('开始全量构建...'));
-            gulpRun.run(null);
+            gulpRun.run({pathConfig: pathConfig});
             break;
        case '-c' : //根据提交的changelist构建,先判断是否有映射文件,如果没有则先分析映射关系
            if (!bizCommitHash) {
@@ -62,4 +67,50 @@ function exec() {
     }
 }
 
+function checkOrCreateConfigFile() {
+    if (fs.existsSync('./build.config.js')) {
+        try {
+            let config = require(path.join(process.cwd(), 'build.config.js'));
+            checkConfigFile(config);
+            return config;
+        } catch(e) {
+            console.log(chalk.yellow('配置文件异常，重新生成新的配置文件！异常的配置文将被重命名为build.config.obsolete.js'));
+            fs.writeFileSync('./build.config.obsolete.js', fs.readFileSync('./build.config.js'))
+            createConfigFile();
+            process.exit(0);
+        }
+    } else {
+        console.log(chalk.yellow('未发现配置文件，即将生成配置文件！'));
+        createConfigFile();
+    }
+}
+
+function createConfigFile() {
+    let fileContent = fs.readFileSync(path.join(__dirname, 'build.config.tpl.js'));
+    fs.writeFileSync('./build.config.js', fileContent);
+    console.log(chalk.green('配置文件build.config.js创建完成，请进行配置后重新执行构建命令!'));
+}
+
+function checkConfigFile(c) {
+    if (isOk(c.sourcePath.jsWithoutModulePath)
+    && isOk(c.sourcePath.jsEntryModulePath)
+    && isOk(c.sourcePath.cssPath)
+    && isOk(c.sourcePath.lessEntryModulePath)
+    && isOk(c.sourcePath.htmlPath)
+    && isOk(c.sourcePath.imgPath)
+    && isOk(c.sourcePath.otherFilesPath)
+    && isOk(c.distDir)) {
+    } else {
+        throw '配置文件字段异常，重新生成新的配置文件';
+    }
+
+
+}
+
+function isOk(f) {
+    if (f === null || f == '' || f) {
+        return true;
+    }
+    return false;
+}
 //日后可增加发送邮件周知。文件内容为change的文件列表以及有影响的文件。

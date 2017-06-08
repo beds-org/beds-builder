@@ -7,11 +7,11 @@ var path = require('path');
 var jsRe = /<script.*?src=["'](.*?)[\?"']/;
 var cssRe = /<link.*?rel=["']stylesheet["'].*?href=['"](.*?)[\?'"]/;
 var imgRe = /<img.*?src=['"](.*?)['"]/;
-var bgcRe = /background\s*:\s*url\(['"]?(.*?)['"]?\)/;
+var bgcRe = /url\(['"]?(.*?)['"]?\)/; //background  和 font-face
 //targetReg == jsRe + cssRe + imgRe + bgcRe
 
 //html标签属性值必须加引号
-var targetReg = /<script.*?src=["'](.*?)[\?"']|<link.*?rel=["']stylesheet["'].*?href=['"](.*?)[\?'"]|<img.*?src=['"](.*?)['"]|background\s*:\s*url\(['"]?(.*?)['"]?\)/g;
+var targetReg = /<script.*?src=["'](.*?)[\?"']|<link.*?rel=["']stylesheet["'].*?href=['"](.*?)[\?'"]|<img.*?src=['"](.*?)['"]|url\(['"]?(.*?)['"]?\)/g;
 var ignoreReg = /^data:image|^\/\/|^[a-zA-Z]:\/\//; //data uri、schema以及 双斜杠开头的路径不处理
 
 var opts = null;
@@ -23,7 +23,7 @@ function changePath(filePath) {
                 filePath = path.resolve(parasitiferPath, filePath);
                 filePath = filePath.replace(opts.projectRootPath, '');
             }
-            return path.normalize(path.join(opts.accessRootPath, filePath));
+            return path.normalize(path.join(opts.accessRootPath|| '', filePath));
             break;
         case 'relative':
             if (path.isAbsolute(filePath)) {
